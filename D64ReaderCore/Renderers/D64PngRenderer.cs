@@ -1,4 +1,4 @@
-﻿using D64Reader.Properties;
+﻿using D64ReaderCore.Properties;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -22,24 +22,29 @@ namespace D64Reader.Renderers
             var directoryContents = DirectoryContents(directory);
             using (var image = new Bitmap(240, 8 * directoryContents.Count()))
             {
-                var chars = Resources.base_png;
-                var charsInv = Resources.baseinv_png;
+                var chars = Resources._base;
 
                 using (var graphics = Graphics.FromImage(image))
                 {
                     graphics.Clear(Color.FromArgb(80, 69, 155));
 
                     var current = 0;
+
                     foreach (var line in directoryContents)
                     {
                         for (var i = 0; i < line.Length; i++)
                         {
-                            var source = line[i];
+                            var source = PetsciiToScreenCode((byte)line[i]);
 
-                            var srcRectangle = new Rectangle(8 * (source % 32), 8 * (source / 32), 8, 8);
+                            var srcRectangle = new Rectangle(8 * (source % 16), 8 * (source / 16), 8, 8);
                             var dstRectangle = new Rectangle(8 * i, 8 * current, 8, 8);
 
-                            graphics.DrawImage(current == 0 && i > 1 ? charsInv : chars, dstRectangle, srcRectangle, GraphicsUnit.Pixel);
+                            if (current == 0 && i > 1)
+                                srcRectangle.Y += 64;
+
+                            Bitmap whatChars = chars;
+
+                            graphics.DrawImage(whatChars, dstRectangle, srcRectangle, GraphicsUnit.Pixel);
                         }
                         current++;
                     }
@@ -48,11 +53,23 @@ namespace D64Reader.Renderers
                 using (var stream = new MemoryStream())
                 {
                     chars.Dispose();
-                    charsInv.Dispose();
                     image.Save(stream, ImageFormat.Png);
                     return stream.ToArray();
                 }
             }
+        }
+
+        private byte PetsciiToScreenCode(byte source)
+        {
+            if (source < 32) source += 128;
+            else if (source >= 64 && source < 96) source -= 64;
+            else if (source >= 96 && source < 128) source -= 32;
+            else if (source >= 128 && source < 160) source += 64;
+            else if (source >= 160 && source < 192) source -= 64;
+            else if (source >= 192 && source < 255) source -= 128;
+            else if (source == 255) source = 94;
+
+            return source;
         }
 
         private IEnumerable<string> DirectoryContents(D64Directory directory)
@@ -62,7 +79,7 @@ namespace D64Reader.Renderers
 
             foreach (var item in directory.DirectoryItems)
             {
-                var entry = item.Blocks.ToString().PadRight(5) + $"\"{item.Name}\" {item.Type}";
+                var entry = (item.Blocks.ToString().PadRight(5) + $"\"{item.Name}\"").PadRight(24) + $"{item.Type}";
                 retVal.Add(entry);
             }
 

@@ -12,7 +12,7 @@ namespace D64Reader.Renderers
 
             foreach (var item in directory.DirectoryItems)
             {
-                var entry = item.Blocks.ToString().PadRight(5) + $"\"{item.Name}\" {item.Type}";
+                var entry = (item.Blocks.ToString().PadRight(5) + $"\"{item.Name}\"").PadRight(24) + $"{item.Type}";
                 sb.AppendLine(entry);
             }
 

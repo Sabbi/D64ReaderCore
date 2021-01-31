@@ -149,7 +149,8 @@ namespace D64Reader
                         // parse the filename
                         for (var i = (startOffset + sectorOffset + 0x05); i <= (startOffset + sectorOffset + 0x14); i++)
                         {
-                            dirItem.Name += (char)imageData[i];
+                            if (imageData[i] != 160)
+                                dirItem.Name += (char)imageData[i];
                         }
 
                         // get the starting track and sector
@@ -235,6 +236,9 @@ namespace D64Reader
 
                     case 175531:
                         return "dt35e";
+
+                    case 197376:
+                        return "dt40e";
 
                     default:
                         return "unknown";
